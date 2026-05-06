@@ -1,0 +1,68 @@
+# Combined workflow: AI triage on PR failures + auto-issue creation on nightly failures.
+#
+# This workflow handles two scenarios:
+#   1. PR failure → posts a triage comment on the PR
+#   2. Nightly/scheduled failure → creates (or updates) a GitHub issue
+#
+# Prerequisites:
+#   1. Add OPENROUTER_API_KEY as a repository secret
+#   2. Replace "CI" below with your actual workflow name
+#   3. Create .github/nightly-failure-template.md (see below)
+
+name: CI Triage
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  issues: write
+  actions: read
+  contents: read
+
+jobs:
+  # --- PR failure: AI triage comment ---
+  triage-pr:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: irrenwill/ci-triage-bot@v1
+        with:
+          openrouter-key: ${{ secrets.OPENROUTER_API_KEY }}
+
+  # --- Nightly failure: open/update a tracking issue ---
+  nightly-issue:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}
+        with:
+          filename: .github/nightly-failure-template.md
+          update_existing: true
+          search_existing: open
+
+# ---
+# To use the nightly-issue job, create .github/nightly-failure-template.md:
+#
+# ---
+# title: "Nightly CI failure — {{ date | date('YYYY-MM-DD') }}"
+# labels: ci-nightly
+# ---
+# The nightly CI run failed.
+#
+# - Workflow run: {{ env.WORKFLOW_URL }}
+# - Date (UTC): {{ date | date('YYYY-MM-DD HH:mm') }}
+#
+# Please inspect the workflow run and close this issue once resolved.
+# `update_existing: true` means this issue gets bumped on repeated failures.

@@ -1,0 +1,50 @@
+name: 'CI Triage Bot'
+description: 'AI-powered CI failure analysis. Posts a triage comment on PRs when CI fails.'
+author: 'irrenwill'
+
+branding:
+  icon: 'activity'
+  color: 'purple'
+
+inputs:
+  openrouter-key:
+    description: 'OpenRouter API key (get one at https://openrouter.ai/keys)'
+    required: true
+  model:
+    description: 'Model to use via OpenRouter'
+    required: false
+    default: 'anthropic/claude-haiku-4.5'
+  max-log-lines:
+    description: 'Maximum number of log lines to send to the model'
+    required: false
+    default: '200'
+  max-tokens:
+    description: 'Maximum tokens in the model response'
+    required: false
+    default: '800'
+  github-token:
+    description: 'GitHub token for posting comments and reading logs'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install -r "${{ github.action_path }}/src/requirements.txt"
+
+    - name: Run CI Triage
+      shell: bash
+      env:
+        OPENROUTER_API_KEY: ${{ inputs.openrouter-key }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        INPUT_MODEL: ${{ inputs.model }}
+        INPUT_MAX_LOG_LINES: ${{ inputs.max-log-lines }}
+        INPUT_MAX_TOKENS: ${{ inputs.max-tokens }}
+      run: python "${{ github.action_path }}/src/ci_triage.py"

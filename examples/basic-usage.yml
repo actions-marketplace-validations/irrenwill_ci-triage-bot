@@ -1,0 +1,29 @@
+# Minimal CI Triage Bot setup.
+# Triggers when your CI workflow fails on a PR and posts an AI triage comment.
+#
+# Prerequisites:
+#   1. Add OPENROUTER_API_KEY as a repository secret
+#   2. Replace "CI" below with your actual workflow name
+
+name: CI Triage
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+  contents: read
+
+jobs:
+  triage:
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: irrenwill/ci-triage-bot@v1
+        with:
+          openrouter-key: ${{ secrets.OPENROUTER_API_KEY }}

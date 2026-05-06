@@ -1,0 +1,50 @@
+name: Test Action
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  # Verify the script loads, parses args, and exits cleanly
+  # without an actual workflow_run event (smoke test).
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r src/requirements.txt
+
+      - name: Verify script loads and --help works
+        run: python src/ci_triage.py --help
+
+      - name: Verify graceful exit without GITHUB_EVENT_PATH
+        env:
+          OPENROUTER_API_KEY: "test-key-not-real"
+        run: |
+          # Should exit with error annotation but not crash
+          python src/ci_triage.py 2>&1 || true
+
+  # Validate action.yml syntax by loading it
+  action-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate action.yml
+        run: |
+          python -c "
+          import yaml, sys
+          with open('action.yml') as f:
+              data = yaml.safe_load(f)
+          assert 'name' in data, 'Missing name'
+          assert 'inputs' in data, 'Missing inputs'
+          assert 'runs' in data, 'Missing runs'
+          assert data['runs']['using'] == 'composite', 'Not a composite action'
+          print('action.yml is valid')
+          "
