@@ -153,7 +153,10 @@ def main() -> int:
 
     pr_number = resolve_pr_number()
     if not pr_number:
-        print("No associated PR found. Skipping triage comment.")
+        print(  # noqa: T201
+            f"::notice::No pull request associated with run {run_id}. "
+            "Triage skipped. This is expected for branches without open PRs."
+        )
         return 0
 
     log = fetch_failed_log(run_id, repo, max_log_lines)

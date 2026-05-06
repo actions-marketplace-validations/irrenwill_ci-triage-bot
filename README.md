@@ -31,7 +31,11 @@ permissions:
 
 jobs:
   triage:
-    if: github.event.workflow_run.conclusion == 'failure'
+    if: >
+      github.event.workflow_run.conclusion == 'failure' &&
+      (github.event.workflow_run.event == 'pull_request' ||
+       github.event.workflow_run.event == 'push' ||
+       github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     steps:
       - uses: irrenwill/ci-triage-bot@v1
