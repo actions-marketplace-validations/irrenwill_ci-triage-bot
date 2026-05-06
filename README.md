@@ -14,7 +14,9 @@ When your CI fails on a PR, you get a structured analysis like this:
 
 CI fails. You click into the run, scroll through hundreds of log lines, squint at the error, and figure out what went wrong. Every time.
 
-CI Triage Bot does the squinting for you. When a workflow fails on a PR, it reads the failed job's logs, sends them to an LLM, and posts a structured triage comment — root cause, hypotheses, and a suggested fix — directly on the PR. Median cost per triage: ~$0.002.
+CI Triage Bot does the squinting for you. When a workflow fails on a PR, it reads the failed job's logs, sends them to an LLM, and posts a structured triage comment — root cause, hypotheses, and a suggested fix — directly on the PR.
+
+**BYOK (Bring Your Own Key)** — you provide your own [OpenRouter API key](https://openrouter.ai/keys). No account with us, no fees from us, no data passes through us. Your key talks directly to OpenRouter from your GitHub Actions runner. Median cost per triage: ~$0.002.
 
 ## Quick Start
 
