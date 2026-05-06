@@ -2,8 +2,13 @@
 
 **AI-powered CI failure analysis that posts actionable triage comments on your PRs.**
 
-<!-- TODO: Record a demo GIF and place it at docs/demo.gif -->
-<!-- ![demo](docs/demo.gif) -->
+## What it looks like
+
+When your CI fails on a PR, you get a structured analysis like this:
+
+![Example triage comment](docs/example-comment.png)
+
+> [See this comment in context →](https://github.com/irrenwill/ci-triage-sandbox/pull/1)
 
 ## Why
 
@@ -13,7 +18,9 @@ CI Triage Bot does the squinting for you. When a workflow fails on a PR, it read
 
 ## Quick Start
 
-**1. Get an [OpenRouter API key](https://openrouter.ai/keys)** and add it as a repository secret named `OPENROUTER_API_KEY`.
+**1. Get an [OpenRouter API key](https://openrouter.ai/keys)** and add it as a repository secret named `OPENROUTER_API_KEY`:
+   - Go to your repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+   - Name: `OPENROUTER_API_KEY`, Value: your key from [openrouter.ai/keys](https://openrouter.ai/keys)
 
 **2. Create `.github/workflows/ci-triage.yml`** in your repo:
 
