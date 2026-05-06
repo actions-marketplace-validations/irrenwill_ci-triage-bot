@@ -94,6 +94,18 @@ The bot posts a comment with this structure:
 
 - **No write access**: This action only posts comments. It does not commit, push, or modify any code or workflow files.
 
+## Privacy & Data Handling
+
+This action sends **the tail of your failed CI log** (last 200 lines by default) to [OpenRouter](https://openrouter.ai), which routes it to the configured LLM provider. Be aware:
+
+- **CI logs may contain sensitive data** — email addresses, usernames, file paths, or environment variables that were accidentally printed. This action does not filter or redact log content before sending.
+- **No source code is sent** unless it appears in the log output itself.
+- **Your OpenRouter API key** is used for the API call and is never logged or stored by this action.
+- **The triage response** is posted as a public comment on your PR. Ensure your repository's visibility settings align with your data sensitivity requirements.
+- **Data retention** is governed by [OpenRouter's privacy policy](https://openrouter.ai/privacy) and the downstream model provider's terms.
+
+If your CI logs may contain personal data subject to GDPR, CCPA, or similar regulations, evaluate whether sending them to a third-party API complies with your organization's data processing policies. You can reduce exposure by lowering `max-log-lines`.
+
 ## FAQ
 
 **How much does it cost?**
