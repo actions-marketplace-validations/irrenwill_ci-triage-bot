@@ -52,6 +52,9 @@ jobs:
         with:
           openrouter-key: ${{ secrets.OPENROUTER_API_KEY }}
           # model: 'google/gemini-2.5-flash'  # optional — default: claude-haiku-4.5
+          # max-tokens: '800'                  # optional — max tokens in model response
+          # max-log-lines: '200'               # optional — log lines sent to model
+          # github-token: ${{ github.token }}   # optional — defaults to built-in token
 ```
 
 **3. Push, break CI, and watch the comment appear.**
