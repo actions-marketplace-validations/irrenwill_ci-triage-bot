@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.0] - 2026-05-06
+
+### Fixed
+- **SHA search retry with backoff**: `resolve_pr_number()` SHA-based search
+  now retries up to 3 times (1s, 2s wait) to account for GitHub search index
+  lag. Affects `on: push` workflows, non-default base branches, and other
+  scenarios where `pull_requests` is empty in the event payload.
+
+### Added
+- **Issue dedup**: Before creating a new issue, the bot searches for an
+  existing open issue with the same workflow name and `ci-triage-auto` label.
+  If found, adds a comment instead of creating a duplicate. Close the issue
+  to reset the cycle.
+
+### Changed
+- README documents multi-workflow behavior (each failed workflow generates
+  its own triage comment) and issue dedup logic.
+
 ## [1.1.1] - 2026-05-06
 
 ### Fixed

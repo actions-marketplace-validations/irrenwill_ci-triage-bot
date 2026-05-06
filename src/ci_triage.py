@@ -18,6 +18,7 @@ import os
 import pathlib
 import subprocess
 import sys
+import time
 from typing import NoReturn
 
 from openai import OpenAI
@@ -56,15 +57,21 @@ def resolve_pr_number() -> str | None:
     if not head_sha or not repo:
         return None
 
-    result = subprocess.run(
-        ["gh", "api", f"search/issues?q=repo:{repo}+is:pr+sha:{head_sha}"],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        return None
+    for attempt in range(3):
+        result = subprocess.run(
+            ["gh", "api", f"search/issues?q=repo:{repo}+is:pr+sha:{head_sha}"],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            return None
+        items = json.loads(result.stdout).get("items", [])
+        if items:
+            return str(items[0]["number"])
+        # GitHub search index may lag; wait before retrying
+        if attempt < 2:
+            time.sleep(2 ** attempt)
 
-    items = json.loads(result.stdout).get("items", [])
-    return str(items[0]["number"]) if items else None
+    return None
 
 
 def fetch_failed_log(run_id: str, repo: str, max_lines: int) -> str:
@@ -186,17 +193,43 @@ def main() -> int:
              "--description", "Auto-created by CI Triage Bot", "--force"],
             capture_output=True, text=True,
         )
-        result = subprocess.run(
-            ["gh", "issue", "create", "-R", repo,
-             "--title", issue_title, "--body", body,
-             "--label", "ci-triage-auto"],
+
+        existing = subprocess.run(
+            ["gh", "issue", "list", "-R", repo,
+             "--label", "ci-triage-auto", "--state", "open",
+             "--search", f"in:title {workflow_name}",
+             "--json", "number", "--limit", "1"],
             capture_output=True, text=True,
         )
-        if result.returncode != 0:
-            print(f"::warning::Failed to create issue: {result.stderr.strip()}")
-            print(triage)
-            return 0
-        print(f"Triage issue created: {result.stdout.strip()}")
+        existing_number = None
+        if existing.returncode == 0:
+            issues = json.loads(existing.stdout or "[]")
+            if issues:
+                existing_number = str(issues[0]["number"])
+
+        if existing_number:
+            result = subprocess.run(
+                ["gh", "issue", "comment", existing_number,
+                 "-R", repo, "--body", body],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                print(f"::warning::Failed to comment on issue #{existing_number}: {result.stderr.strip()}")
+                print(triage)
+                return 0
+            print(f"Triage comment added to existing issue #{existing_number}")
+        else:
+            result = subprocess.run(
+                ["gh", "issue", "create", "-R", repo,
+                 "--title", issue_title, "--body", body,
+                 "--label", "ci-triage-auto"],
+                capture_output=True, text=True,
+            )
+            if result.returncode != 0:
+                print(f"::warning::Failed to create issue: {result.stderr.strip()}")
+                print(triage)
+                return 0
+            print(f"Triage issue created: {result.stdout.strip()}")
 
     return 0
 

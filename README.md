@@ -98,7 +98,11 @@ The bot posts a comment with this structure:
 
 - **Multi-job workflows**: When multiple parallel jobs fail in the same workflow run, the action analyzes the consolidated log from `gh run view --log-failed`. The single comment summarizes the dominant failure pattern. Per-job analysis is tracked in [#2](../../issues/2).
 
-- **Re-run behavior**: Each failed workflow run posts a new comment. Re-running CI on the same PR will create additional comments. A sticky-comment mode (update instead of create) is tracked in [#1](../../issues/1).
+- **Multiple CI workflows**: If your repo has multiple CI workflows (e.g., `test.yml` and `lint.yml`) that both fail on the same PR, each generates its own triage comment. This is by design — each workflow fails for different reasons and produces a separate analysis.
+
+- **Re-run behavior**: Each failed workflow run posts a new PR comment. Re-running CI on the same PR will create additional comments. A sticky-comment mode (update instead of create) is tracked in [#1](../../issues/1).
+
+- **Issue dedup**: When no PR is found, the bot searches for an existing open issue with the same workflow name and `ci-triage-auto` label. If found, it adds a comment to that issue instead of creating a new one. Close the issue to reset the cycle.
 
 - **No write access**: This action only posts comments and creates issues. It does not commit, push, or modify any code or workflow files.
 
@@ -135,7 +139,7 @@ Yes. The `workflow_run` trigger fires for both `pull_request` and `pull_request_
 The bot creates a GitHub Issue with the triage analysis as the body, labeled `ci-triage-auto`. This covers push-to-main failures, `workflow_dispatch` runs, and other non-PR triggers. Requires `issues: write` permission.
 
 **Why does re-running CI create multiple comments?**
-Each workflow run is a separate event with potentially different failure reasons (e.g., a flaky test passes on retry, or you pushed a fix between runs). Similarly, non-PR failures create a new issue per run. A sticky-comment/issue mode (update instead of create) is planned — track [#1](../../issues/1) for updates.
+On PRs, each failed workflow run posts a new comment — different runs may fail for different reasons (flaky test, pushed fix between runs). A sticky-comment mode is planned for PRs — track [#1](../../issues/1). For non-PR failures, the bot reuses an existing open issue (same workflow name + `ci-triage-auto` label) and adds a comment instead of creating a new issue.
 
 **How does this handle multiple parallel job failures?**
 The action downloads the consolidated failed log via `gh run view --log-failed`, which includes output from all failed jobs. The LLM analyzes this combined log and summarizes the dominant failure. If you need separate analysis per job, let us know — we're tracking interest in [#2](../../issues/2).
