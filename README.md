@@ -51,6 +51,7 @@ jobs:
       - uses: irrenwill/ci-triage-bot@v1
         with:
           openrouter-key: ${{ secrets.OPENROUTER_API_KEY }}
+          # model: 'google/gemini-2.5-flash'  # optional — default: claude-haiku-4.5
 ```
 
 **3. Push, break CI, and watch the comment appear.**
