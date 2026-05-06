@@ -80,6 +80,18 @@ The bot posts a comment with this structure:
 > **Suggested fix:** Add `foo>=2.0` to requirements.txt
 > **Confidence:** high
 
+## Limitations & Security
+
+- **Forked PRs**: This action uses the standard `workflow_run` event with read-only `GITHUB_TOKEN` semantics. PRs from forks may not receive triage comments due to GitHub's permission model. This is intentional — we do not use `pull_request_target` to avoid exposing secrets to untrusted code.
+
+- **Log truncation**: Only the last N lines (default 200) of the failed log are analyzed. If your failure output appears earlier in the run, increase `max-log-lines`.
+
+- **Multi-job workflows**: When multiple parallel jobs fail in the same workflow run, the action analyzes the consolidated log from `gh run view --log-failed`. The single comment summarizes the dominant failure pattern. Per-job analysis is tracked in [#2](../../issues/2).
+
+- **Re-run behavior**: Each failed workflow run posts a new comment. Re-running CI on the same PR will create additional comments. A sticky-comment mode (update instead of create) is tracked in [#1](../../issues/1).
+
+- **No write access**: This action only posts comments. It does not commit, push, or modify any code or workflow files.
+
 ## FAQ
 
 **How much does it cost?**
@@ -100,13 +112,20 @@ Yes. The `workflow_run` trigger fires for both `pull_request` and `pull_request_
 **What if no PR is associated with the failed run?**
 The bot exits gracefully with a success status. No comment is posted, no error is raised.
 
+**Why does re-running CI create multiple comments?**
+Each workflow run is a separate event with potentially different failure reasons (e.g., a flaky test passes on retry, or you pushed a fix between runs). The current v1 behavior preserves this history. A sticky-comment mode that updates the existing comment instead of creating a new one is planned for v1.1 — track [#1](../../issues/1) for updates.
+
+**How does this handle multiple parallel job failures?**
+The action downloads the consolidated failed log via `gh run view --log-failed`, which includes output from all failed jobs. The LLM analyzes this combined log and summarizes the dominant failure. If you need separate analysis per job, let us know — we're tracking interest in [#2](../../issues/2).
+
 ## Roadmap
 
+- [ ] Sticky comment mode — update existing comment instead of creating new ones ([#1](../../issues/1))
+- [ ] Per-job analysis for multi-job workflows ([#2](../../issues/2))
+- [ ] Read-only mode for forked PRs ([#3](../../issues/3))
 - [ ] Configurable comment template (custom prompt / output format)
 - [ ] Slack / Discord notification option alongside PR comments
-- [ ] Multi-job triage (analyze each failed job separately)
 - [ ] Failure pattern memory (detect recurring failures across runs)
-- [ ] Direct Anthropic API support (bypass OpenRouter)
 
 ## Examples
 
