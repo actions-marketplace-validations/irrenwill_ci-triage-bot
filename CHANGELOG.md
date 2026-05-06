@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.1] - 2026-05-06
+
+### Fixed
+- `gh issue create --label ci-triage-auto` fails if the label doesn't exist
+  in the target repo. Now auto-creates the label (idempotent) before opening
+  the issue.
+
 ## [1.1.0] - 2026-05-06
 
 ### Added
