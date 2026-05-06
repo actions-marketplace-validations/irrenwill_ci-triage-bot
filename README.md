@@ -33,6 +33,7 @@ on:
 
 permissions:
   pull-requests: write
+  issues: write
   actions: read
   contents: read
 
@@ -60,11 +61,11 @@ PR push ──> CI workflow runs ──> fails
                         workflow_run event fires
                                    │
                           CI Triage Bot runs:
-                            1. Find the PR number
-                            2. Download failed job logs (gh CLI)
-                            3. Trim to last N lines
-                            4. Send to LLM via OpenRouter
-                            5. Post structured comment on PR
+                            1. Download failed job logs (gh CLI)
+                            2. Trim to last N lines
+                            3. Send to LLM via OpenRouter
+                            4. Has PR? → comment on PR
+                               No PR?  → open issue (label: ci-triage-auto)
 ```
 
 ## Inputs
@@ -99,7 +100,7 @@ The bot posts a comment with this structure:
 
 - **Re-run behavior**: Each failed workflow run posts a new comment. Re-running CI on the same PR will create additional comments. A sticky-comment mode (update instead of create) is tracked in [#1](../../issues/1).
 
-- **No write access**: This action only posts comments. It does not commit, push, or modify any code or workflow files.
+- **No write access**: This action only posts comments and creates issues. It does not commit, push, or modify any code or workflow files.
 
 ## Privacy & Data Handling
 
@@ -131,10 +132,10 @@ OpenRouter gives you model flexibility with a single API key. You can switch bet
 Yes. The `workflow_run` trigger fires for both `pull_request` and `pull_request_target` events. The bot resolves the PR number from either.
 
 **What if no PR is associated with the failed run?**
-The bot exits gracefully with a success status. No comment is posted, no error is raised.
+The bot creates a GitHub Issue with the triage analysis as the body, labeled `ci-triage-auto`. This covers push-to-main failures, `workflow_dispatch` runs, and other non-PR triggers. Requires `issues: write` permission.
 
 **Why does re-running CI create multiple comments?**
-Each workflow run is a separate event with potentially different failure reasons (e.g., a flaky test passes on retry, or you pushed a fix between runs). The current v1 behavior preserves this history. A sticky-comment mode that updates the existing comment instead of creating a new one is planned for v1.1 — track [#1](../../issues/1) for updates.
+Each workflow run is a separate event with potentially different failure reasons (e.g., a flaky test passes on retry, or you pushed a fix between runs). Similarly, non-PR failures create a new issue per run. A sticky-comment/issue mode (update instead of create) is planned — track [#1](../../issues/1) for updates.
 
 **How does this handle multiple parallel job failures?**
 The action downloads the consolidated failed log via `gh run view --log-failed`, which includes output from all failed jobs. The LLM analyzes this combined log and summarizes the dominant failure. If you need separate analysis per job, let us know — we're tracking interest in [#2](../../issues/2).

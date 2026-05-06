@@ -152,12 +152,6 @@ def main() -> int:
         die("Could not find workflow_run.id in event payload.")
 
     pr_number = resolve_pr_number()
-    if not pr_number:
-        print(  # noqa: T201
-            f"::notice::No pull request associated with run {run_id}. "
-            "Triage skipped. This is expected for branches without open PRs."
-        )
-        return 0
 
     log = fetch_failed_log(run_id, repo, max_log_lines)
     if not log:
@@ -171,18 +165,33 @@ def main() -> int:
         triage = generate_triage(log, repo, model, max_tokens)
 
     header = f"## 🤖 CI Triage (auto)\nRun: {run_url}\n\n"
-    comment_body = header + triage
+    body = header + triage
 
-    result = subprocess.run(
-        ["gh", "pr", "comment", pr_number, "-R", repo, "--body", comment_body],
-        capture_output=True, text=True,
-    )
-    if result.returncode != 0:
-        print(f"::warning::Failed to post comment: {result.stderr.strip()}")
-        print(triage)
-        return 0
+    if pr_number:
+        result = subprocess.run(
+            ["gh", "pr", "comment", pr_number, "-R", repo, "--body", body],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            print(f"::warning::Failed to post PR comment: {result.stderr.strip()}")
+            print(triage)
+            return 0
+        print(f"Triage comment posted on PR #{pr_number}")
+    else:
+        workflow_name = payload.get("workflow_run", {}).get("name", "CI")
+        issue_title = f"CI Triage: {workflow_name} failed"
+        result = subprocess.run(
+            ["gh", "issue", "create", "-R", repo,
+             "--title", issue_title, "--body", body,
+             "--label", "ci-triage-auto"],
+            capture_output=True, text=True,
+        )
+        if result.returncode != 0:
+            print(f"::warning::Failed to create issue: {result.stderr.strip()}")
+            print(triage)
+            return 0
+        print(f"Triage issue created: {result.stdout.strip()}")
 
-    print(f"Triage comment posted on PR #{pr_number}")
     return 0
 
 

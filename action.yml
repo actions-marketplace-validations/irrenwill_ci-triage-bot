@@ -1,5 +1,5 @@
 name: 'CI Triage Bot'
-description: 'AI-powered CI failure analysis. Posts a triage comment on PRs when CI fails.'
+description: 'AI-powered CI failure analysis. Posts triage on PRs or opens an issue when no PR exists.'
 author: 'irrenwill'
 
 branding:

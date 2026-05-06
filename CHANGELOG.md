@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.1.0] - 2026-05-06
+
+### Added
+- **Issue fallback for non-PR failures**: When no associated PR is found
+  (push-to-main, `workflow_dispatch`, etc.), the bot now creates a GitHub Issue
+  with the triage analysis as the body, labeled `ci-triage-auto`.
+- `issues: write` permission added to all example workflows.
+
+### Changed
+- Updated README FAQ, Limitations, and How It Works diagram to reflect the
+  new PR-or-Issue routing behavior.
+
 ## [1.0.1] - 2026-05-06
 
 ### Fixed
