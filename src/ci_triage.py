@@ -180,6 +180,12 @@ def main() -> int:
     else:
         workflow_name = payload.get("workflow_run", {}).get("name", "CI")
         issue_title = f"CI Triage: {workflow_name} failed"
+        subprocess.run(
+            ["gh", "label", "create", "ci-triage-auto",
+             "-R", repo, "--color", "D4C5F9",
+             "--description", "Auto-created by CI Triage Bot", "--force"],
+            capture_output=True, text=True,
+        )
         result = subprocess.run(
             ["gh", "issue", "create", "-R", repo,
              "--title", issue_title, "--body", body,
